@@ -1,22 +1,16 @@
+"""Application settings loaded from environment variables."""
+
 from pydantic_settings import BaseSettings
-from functools import lru_cache
 
 
 class Settings(BaseSettings):
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/prospect_brief"
+    redis_url: str = "redis://localhost:6379/0"
     anthropic_api_key: str = ""
-    proxycurl_api_key: str = ""
-    newsapi_key: str = ""
-
-    # Model selection
+    apollo_api_key: str = ""
     claude_model: str = "claude-sonnet-4-5-20250929"
 
-    # API base URLs
-    proxycurl_base_url: str = "https://nubela.co/proxycurl/api/v2"
-    newsapi_base_url: str = "https://newsapi.org/v2"
-
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
-@lru_cache
-def get_settings() -> Settings:
-    return Settings()
+settings = Settings()

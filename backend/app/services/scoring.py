@@ -1,5 +1,62 @@
 """ICP fit scoring — compares an account against an ICP model's criteria."""
 
+from typing import Any
+
+
+def score_apollo_person(person: dict, icp_model: dict) -> dict[str, Any]:
+    """Score an Apollo person/contact against an ICP model.
+
+    Maps Apollo's person + organization fields into the account format
+    expected by calculate_icp_fit, then returns score + sub-score breakdown.
+
+    Args:
+        person: Normalized Apollo person dict (with 'organization' sub-object).
+        icp_model: ICP model dict with 'criteria' and 'scoring_weights'.
+
+    Returns:
+        {"score": float, "breakdown": dict} with overall fit and sub-scores.
+    """
+    org = person.get("organization") or {}
+
+    # Build location from available parts
+    location_parts = [
+        org.get("city"),
+        org.get("state"),
+        org.get("country"),
+    ]
+    location = ", ".join(p for p in location_parts if p) or org.get("raw_address", "")
+
+    account = {
+        "industry": (
+            org.get("industry")
+            or person.get("organization_industry")
+            or org.get("industry_tag_id")
+            or ""
+        ),
+        "employee_count": (
+            org.get("estimated_num_employees")
+            or org.get("employee_count")
+        ),
+        "estimated_revenue": org.get("annual_revenue"),
+        "technologies": org.get("technologies", []) or [],
+        "location": location,
+        "personas": [{"title": person.get("title", "")}] if person.get("title") else [],
+    }
+
+    score = calculate_icp_fit(account, icp_model)
+
+    # Compute sub-scores for the breakdown
+    criteria = icp_model.get("criteria", {})
+    breakdown = {
+        "firmographic_fit": _score_firmographic(account, criteria),
+        "tech_fit": _score_tech(account, criteria),
+        "persona_match": _score_persona(account, criteria),
+        "timing_signals": 0.5,
+        "data_confidence": _score_data_confidence(account),
+    }
+
+    return {"score": round(score, 4), "breakdown": breakdown}
+
 
 def calculate_icp_fit(account: dict, icp_model: dict) -> float:
     """Score how well an account matches an ICP model (0.0 to 1.0).

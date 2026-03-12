@@ -10,6 +10,7 @@ if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
 from app.routes.icp import router as icp_router
+from app.routes.prospects import router as prospects_router
 from app.sample_data import (
     SUBSCRIBERS,
     BEHAVIORAL_DATA,
@@ -43,6 +44,7 @@ app.add_middleware(
 
 
 app.include_router(icp_router)
+app.include_router(prospects_router)
 
 
 @app.get("/health")

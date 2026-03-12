@@ -814,6 +814,119 @@ body {
   margin-top: 0.15rem;
 }
 
+/* ── Prospect Search ────────────────────────────────────────── */
+.prospect-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.prospect-select-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.prospect-select-wrap label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.prospect-select {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.prospect-btn {
+  padding: 0.55rem 1.25rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--primary);
+  color: #ffffff;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.prospect-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospect-btn:hover:not(:disabled) { opacity: 0.85; }
+
+.prospect-btn-secondary {
+  background: var(--dark);
+  color: #d1d5db;
+}
+
+.prospect-status { margin-bottom: 0.75rem; font-size: 0.82rem; }
+.prospect-loading { color: var(--accent); }
+.prospect-success { color: var(--success); font-weight: 600; }
+.prospect-error { color: var(--danger); }
+.prospect-status-msg { color: var(--text-muted); }
+.prospect-empty { color: var(--text-muted); text-align: center; padding: 2rem; }
+
+/* ── Prospect Table ────────────────────────────────────────── */
+.prospect-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.prospect-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--dark);
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+
+.prospect-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.prospect-table tr:last-child td { border-bottom: none; }
+.prospect-table tr:hover td { background: var(--bg); }
+
+.pr-name { font-weight: 600; white-space: nowrap; }
+.pr-link { color: var(--primary); text-decoration: none; font-weight: 500; }
+.pr-link:hover { text-decoration: underline; }
+
+/* ── Score Badge ───────────────────────────────────────────── */
+.score-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+
+.score-high { background: var(--success-bg); color: var(--success); }
+.score-mid { background: var(--warning-bg); color: var(--warning); }
+.score-low { background: var(--danger-bg); color: var(--danger); }
+.score-na { background: var(--bg); color: var(--text-light); }
+
 /* ── Animations ─────────────────────────────────────────────── */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }

@@ -1,6 +1,6 @@
 """Tests for ICP fit scoring."""
 
-from app.services.scoring import _employee_count_to_size_label, calculate_icp_fit
+from app.services.scoring import _employee_count_to_size_label, calculate_icp_fit, score_apollo_person
 
 
 SAMPLE_ICP = {
@@ -87,3 +87,34 @@ def test_returns_bounded_float():
     score = calculate_icp_fit({"industry": "SaaS"}, SAMPLE_ICP)
     assert isinstance(score, float)
     assert 0.0 <= score <= 1.0
+
+
+def test_score_apollo_person():
+    """Test the Apollo person → account adapter."""
+    person = {
+        "title": "VP of Sales",
+        "seniority": "VP",
+        "organization": {
+            "industry": "SaaS",
+            "estimated_num_employees": 200,
+            "annual_revenue": 20_000_000,
+            "city": "San Francisco",
+            "state": "California",
+            "country": "United States",
+            "technologies": ["Salesforce", "HubSpot", "Slack"],
+        },
+    }
+    result = score_apollo_person(person, SAMPLE_ICP)
+    assert "score" in result
+    assert "breakdown" in result
+    assert 0.0 <= result["score"] <= 1.0
+    assert result["score"] > 0.5  # should be a decent match
+    assert "firmographic_fit" in result["breakdown"]
+
+
+def test_score_apollo_person_sparse():
+    """Test scoring with minimal Apollo data."""
+    person = {"title": "Intern", "organization": {}}
+    result = score_apollo_person(person, SAMPLE_ICP)
+    assert 0.0 <= result["score"] <= 1.0
+    assert result["score"] < 0.4  # sparse data = low score

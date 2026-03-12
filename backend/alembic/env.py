@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.config import settings
 from app.database import Base
-from app.models import ICPModel  # noqa: F401 — register models with Base
+from app.models import ICPModel, Prospect  # noqa: F401 — register models with Base
 
 config = context.config
 if config.config_file_name is not None:

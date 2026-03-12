@@ -16,6 +16,7 @@ import { renderRecommendations } from "./components/recommendations.js";
 import { renderRevenueForecast } from "./components/revenue-forecast.js";
 import { renderRetentionActions } from "./components/retention-actions.js";
 import { renderTicker } from "./components/ticker.js";
+import { renderProspectSearch } from "./components/prospect-search.js";
 
 async function initDashboard() {
   const results = await Promise.allSettled([
@@ -42,6 +43,9 @@ async function initDashboard() {
     { result: results[5], render: renderRevenueForecast, id: "revenue-forecast" },
     { result: results[6], render: renderRetentionActions, id: "retention-actions" },
   ];
+
+  // Render prospect search (standalone — doesn't need API data to initialize)
+  renderProspectSearch(document.getElementById("prospect-search"));
 
   renderers.forEach(({ result, render, id }) => {
     const section = document.getElementById(id);

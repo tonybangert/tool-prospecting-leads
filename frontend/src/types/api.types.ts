@@ -20,9 +20,11 @@ export interface ConversationResponse {
 export interface Prospect {
   id: string;
   icp_model_id: string;
+  apollo_person_id: string | null;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
+  phone: string | null;
   title: string | null;
   seniority: string | null;
   linkedin_url: string | null;
@@ -33,6 +35,9 @@ export interface Prospect {
   company_location: string | null;
   icp_fit_score: number | null;
   score_breakdown: Record<string, number> | null;
+  source: string | null;
+  discovery_data: Record<string, unknown> | null;
+  enriched_at: string | null;
   status: string;
   created_at: string;
 }
@@ -41,3 +46,5 @@ export interface ProspectResult {
   items: Prospect[];
   total: number;
 }
+
+export type PipelineStep = "discover" | "select" | "enrich" | "results";

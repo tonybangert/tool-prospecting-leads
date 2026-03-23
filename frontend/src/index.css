@@ -9,5 +9,70 @@
       "Helvetica Neue", Arial, sans-serif;
     line-height: 1.6;
     font-variant-numeric: tabular-nums;
+    @apply bg-bg;
   }
 }
+
+/* ── Pipeline transition animations ────────────────────── */
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out both;
+  }
+
+  .shimmer-loading {
+    background: linear-gradient(
+      90deg,
+      #f0f4f8 25%,
+      #e2e8f0 50%,
+      #f0f4f8 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+}
+
+/* ── Textured dashboard background ─────────────────────── */
+/*  Three layers: gradient mesh, SVG noise, dot grid.       */
+/*  Each at low opacity for a premium fintech feel.         */
+
+.dashboard-bg {
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;            /* new stacking context */
+}
+
+/* Layer 1 — Gradient mesh (brand colors at low opacity) */
+.dashboard-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 10%, rgba(250,168,64,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 8%,  rgba(239,69,55,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(16,45,80,0.08) 0%, transparent 70%),
+    linear-gradient(180deg, #f5f7fa 0%, #edf1f7 100%);
+}
+
+/* Layer 2 — SVG noise texture + dot grid */
+.dashboard-bg::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    /* Dot grid — navy at 3% opacity, 24px spacing */
+    radial-gradient(circle 0.75px at center, rgba(16,45,80,0.03) 0%, transparent 100%),
+    /* Noise via inline SVG feTurbulence */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 24px 24px, 200px 200px;
+  pointer-events: none;
+}
+
+/* ── Hub card stagger delays ───────────────────────────── */
+.hub-stagger-1 { animation-delay: 0ms; }
+.hub-stagger-2 { animation-delay: 60ms; }
+.hub-stagger-3 { animation-delay: 120ms; }
+.hub-stagger-4 { animation-delay: 180ms; }
+.hub-stagger-5 { animation-delay: 240ms; }
+.hub-stagger-6 { animation-delay: 300ms; }

@@ -1,4 +1,4 @@
-"""Prospect database model — stores scored leads from Apollo search."""
+"""Prospect database model — stores leads from discovery and enrichment pipeline."""
 
 import uuid
 from datetime import datetime
@@ -25,6 +25,7 @@ class Prospect(Base):
     first_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     last_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(100), nullable=True)
     title: Mapped[str | None] = mapped_column(String(500), nullable=True)
     seniority: Mapped[str | None] = mapped_column(String(100), nullable=True)
     linkedin_url: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -36,7 +37,12 @@ class Prospect(Base):
     icp_fit_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     score_breakdown: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     apollo_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    status: Mapped[str] = mapped_column(String(50), default="scored")
+    source: Mapped[str] = mapped_column(String(50), default="web_search")
+    discovery_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    enriched_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    status: Mapped[str] = mapped_column(String(50), default="discovered", index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

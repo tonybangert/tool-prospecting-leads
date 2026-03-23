@@ -118,9 +118,9 @@ export default function IcpModelList({ onSearchProspects }: Props) {
 
                     <button
                       onClick={() => onSearchProspects(model.id)}
-                      className="text-xs font-semibold text-primary hover:underline"
+                      className="text-xs font-semibold text-navy hover:underline"
                     >
-                      Search Prospects →
+                      Discover Prospects →
                     </button>
                   </div>
 

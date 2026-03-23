@@ -14,9 +14,10 @@ Return a JSON object with this exact structure (omit fields the user didn't ment
     "geographies": ["list of target regions/countries"],
     "technologies": ["list of technologies they use"],
     "personas": [
-      {"title": "Job title", "seniority": "C-level|VP|Director|Manager"}
+      {"title": "Job title", "seniority": "C-level|VP|Director|Manager", "context": "why this role is relevant to the sale"}
     ],
     "pain_points": ["business problems they face"],
+    "buying_triggers": ["signals that indicate a company is ready to buy, e.g. recent hires, funding rounds, tech migrations, regulatory changes"],
     "keywords": ["other relevant terms"]
   },
   "confidence_scores": {
@@ -26,7 +27,8 @@ Return a JSON object with this exact structure (omit fields the user didn't ment
     "geographies": 0.0,
     "technologies": 0.0,
     "personas": 0.0,
-    "pain_points": 0.0
+    "pain_points": 0.0,
+    "buying_triggers": 0.0
   },
   "follow_up_questions": [
     "Questions to ask the user to fill in gaps or improve low-confidence fields"

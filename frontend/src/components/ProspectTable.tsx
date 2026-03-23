@@ -8,7 +8,7 @@ function scoreClass(score: number | null): string {
   if (score == null) return "bg-bg text-text-light";
   if (score >= 0.7) return "bg-success-bg text-success";
   if (score >= 0.4) return "bg-warning-bg text-warning";
-  return "bg-danger-bg text-danger";
+  return "bg-coral-bg text-coral";
 }
 
 function fmtScore(score: number | null): string {
@@ -16,16 +16,43 @@ function fmtScore(score: number | null): string {
   return `${Math.round(score * 100)}%`;
 }
 
-// TODO(human): Implement renderScoreBreakdown
-// This function receives a score_breakdown object like:
-//   { firmographic_fit: 0.85, tech_fit: 0.6, persona_match: 0.9, timing_signals: 0.3, data_confidence: 0.7 }
-// It should return JSX that visualizes each dimension in a compact, scannable way.
-// Return null if breakdown is null.
+const BREAKDOWN_LABELS: Record<string, string> = {
+  firmographic_fit: "Firmographic",
+  tech_fit: "Tech",
+  persona_match: "Persona",
+  timing_signals: "Timing",
+  data_confidence: "Confidence",
+};
+
+function barColor(value: number): string {
+  if (value >= 0.7) return "bg-success";
+  if (value >= 0.4) return "bg-amber";
+  return "bg-coral";
+}
+
 function renderScoreBreakdown(
-  _breakdown: Record<string, number> | null,
+  breakdown: Record<string, number> | null,
 ): React.ReactNode {
-  // TODO(human): Replace this placeholder — see instructions above
-  return null;
+  if (!breakdown) return <span className="text-text-light">—</span>;
+
+  return (
+    <div className="flex flex-col gap-0.5 min-w-[120px]">
+      {Object.entries(BREAKDOWN_LABELS).map(([key, label]) => {
+        const value = breakdown[key] ?? 0;
+        return (
+          <div key={key} className="flex items-center gap-1.5">
+            <span className="text-[0.6rem] text-muted w-16 text-right">{label}</span>
+            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${barColor(value)}`}
+                style={{ width: `${Math.round(value * 100)}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function ProspectTable({ prospects }: Props) {
@@ -38,11 +65,11 @@ export default function ProspectTable({ prospects }: Props) {
       <table className="w-full border-collapse text-[0.8rem]">
         <thead>
           <tr>
-            {["Name", "Title", "Company", "Location", "Seniority", "Email", "ICP Fit", "Breakdown", "Profile"].map(
+            {["Name", "Title", "Company", "Location", "Seniority", "Email", "Phone", "ICP Fit", "Breakdown", "Status", "Profile"].map(
               (h) => (
                 <th
                   key={h}
-                  className="text-left font-semibold text-muted py-2 px-3 border-b-2 border-dark uppercase text-[0.68rem] tracking-wide"
+                  className="text-left font-semibold text-muted py-2 px-3 border-b-2 border-navy uppercase text-[0.68rem] tracking-wide"
                 >
                   {h}
                 </th>
@@ -62,8 +89,15 @@ export default function ProspectTable({ prospects }: Props) {
               <td className="py-2 px-3 border-b border-gray-200 capitalize">{p.seniority ?? "—"}</td>
               <td className="py-2 px-3 border-b border-gray-200">
                 {p.email ? (
-                  <a href={`mailto:${p.email}`} className="text-primary hover:underline">
+                  <a href={`mailto:${p.email}`} className="text-navy hover:underline">
                     {p.email}
+                  </a>
+                ) : "—"}
+              </td>
+              <td className="py-2 px-3 border-b border-gray-200 whitespace-nowrap">
+                {p.phone ? (
+                  <a href={`tel:${p.phone}`} className="text-navy hover:underline">
+                    {p.phone}
                   </a>
                 ) : "—"}
               </td>
@@ -78,12 +112,23 @@ export default function ProspectTable({ prospects }: Props) {
                 {renderScoreBreakdown(p.score_breakdown)}
               </td>
               <td className="py-2 px-3 border-b border-gray-200">
+                {p.enriched_at ? (
+                  <span className="inline-block px-2 py-0.5 rounded-[3px] text-[0.68rem] font-semibold bg-success-bg text-success">
+                    Enriched
+                  </span>
+                ) : (
+                  <span className="inline-block px-2 py-0.5 rounded-[3px] text-[0.68rem] font-semibold bg-amber-bg text-amber-dark capitalize">
+                    {p.status}
+                  </span>
+                )}
+              </td>
+              <td className="py-2 px-3 border-b border-gray-200">
                 {p.linkedin_url ? (
                   <a
                     href={p.linkedin_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary no-underline font-medium hover:underline"
+                    className="text-navy no-underline font-medium hover:underline"
                   >
                     LinkedIn
                   </a>

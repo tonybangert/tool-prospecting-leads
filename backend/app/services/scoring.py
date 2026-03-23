@@ -3,6 +3,35 @@
 from typing import Any
 
 
+def score_discovered_prospect(parsed_data: dict, icp_model: dict) -> dict[str, Any]:
+    """Score a prospect discovered via Google CSE + Claude extraction.
+
+    Uses the same sub-scoring logic as Apollo prospects but expects lower
+    data confidence since most fields are inferred from LinkedIn snippets.
+    """
+    account = {
+        "industry": parsed_data.get("industry", ""),
+        "employee_count": parsed_data.get("employee_count"),
+        "estimated_revenue": None,
+        "technologies": [],
+        "location": parsed_data.get("location", ""),
+        "personas": [{"title": parsed_data.get("title", "")}] if parsed_data.get("title") else [],
+    }
+
+    score = calculate_icp_fit(account, icp_model)
+
+    criteria = icp_model.get("criteria", {})
+    breakdown = {
+        "firmographic_fit": _score_firmographic(account, criteria),
+        "tech_fit": 0.5,  # No tech data from LinkedIn snippets
+        "persona_match": _score_persona(account, criteria),
+        "timing_signals": _score_timing_signals(account, criteria),
+        "data_confidence": 0.3,  # Low confidence — snippet-inferred data
+    }
+
+    return {"score": round(score, 4), "breakdown": breakdown}
+
+
 def score_apollo_person(person: dict, icp_model: dict) -> dict[str, Any]:
     """Score an Apollo person/contact against an ICP model.
 
@@ -51,7 +80,7 @@ def score_apollo_person(person: dict, icp_model: dict) -> dict[str, Any]:
         "firmographic_fit": _score_firmographic(account, criteria),
         "tech_fit": _score_tech(account, criteria),
         "persona_match": _score_persona(account, criteria),
-        "timing_signals": 0.5,
+        "timing_signals": _score_timing_signals(account, criteria),
         "data_confidence": _score_data_confidence(account),
     }
 
@@ -84,7 +113,7 @@ def calculate_icp_fit(account: dict, icp_model: dict) -> float:
         "firmographic_fit": _score_firmographic(account, criteria),
         "tech_fit": _score_tech(account, criteria),
         "persona_match": _score_persona(account, criteria),
-        "timing_signals": 0.5,  # Phase 2 placeholder
+        "timing_signals": _score_timing_signals(account, criteria),
         "data_confidence": _score_data_confidence(account),
     }
 
@@ -100,11 +129,16 @@ def _score_firmographic(account: dict, criteria: dict) -> float:
     """Industry match, employee range, revenue range, geography — averaged."""
     parts: list[float] = []
 
-    # Industry: exact case-insensitive match against ICP list
+    # Industry: case-insensitive match with substring fallback
     icp_industries = {i.lower() for i in criteria.get("industries", [])}
     if icp_industries:
         acct_industry = (account.get("industry") or "").lower()
-        parts.append(1.0 if acct_industry in icp_industries else 0.0)
+        if acct_industry in icp_industries:
+            parts.append(1.0)
+        elif any(icp in acct_industry or acct_industry in icp for icp in icp_industries):
+            parts.append(0.8)  # Partial match (e.g. "technology" in "information technology")
+        else:
+            parts.append(0.0)
 
     # Employee count: gradient scoring — full marks inside range, linear
     # falloff up to 2x outside, then zero.
@@ -161,24 +195,130 @@ def _score_tech(account: dict, criteria: dict) -> float:
     return overlap / len(icp_techs)
 
 
+def _normalize_title(title: str) -> set[str]:
+    """Expand a title into a set of matchable variants.
+
+    Handles C-suite abbreviations ↔ full forms and common synonyms so that
+    "CEO" matches "Chief Executive Officer" and vice versa.
+    """
+    t = title.lower().strip()
+    variants = {t}
+
+    # C-suite abbreviation ↔ full form mapping
+    _ALIASES = {
+        "ceo": {"chief executive officer"},
+        "coo": {"chief operating officer"},
+        "cro": {"chief revenue officer"},
+        "cfo": {"chief financial officer"},
+        "cto": {"chief technology officer"},
+        "cmo": {"chief marketing officer"},
+        "cio": {"chief information officer"},
+        "cpo": {"chief product officer"},
+        "vp of operations": {"vice president of operations", "vp operations"},
+        "vp of sales": {"vice president of sales", "vp sales"},
+    }
+
+    # If title IS an abbreviation, add full forms
+    if t in _ALIASES:
+        variants.update(_ALIASES[t])
+
+    # If title contains a full form, add abbreviation
+    for abbr, full_forms in _ALIASES.items():
+        for full in full_forms:
+            if full in t:
+                variants.add(abbr)
+
+    return variants
+
+
 def _score_persona(account: dict, criteria: dict) -> float:
-    """Check if any account personas match ICP persona titles."""
+    """Check if any account personas match ICP persona titles.
+
+    Uses precision (fraction of prospect's titles that match ICP) rather than
+    recall. A single prospect is one person — if their title matches ANY ICP
+    persona, that's a strong signal (1.0). Recall would cap at 1/N for N
+    target personas, punishing good matches.
+
+    Normalizes titles via alias expansion (CEO ↔ Chief Executive Officer)
+    and falls back to fuzzy matching for remaining variations.
+    """
     icp_personas = criteria.get("personas", [])
     if not icp_personas:
         return 0.5  # No persona criteria — neutral
-    icp_titles = {p.get("title", "").lower() for p in icp_personas}
+
+    # Expand ICP titles into all matchable variants
+    icp_variants: set[str] = set()
+    for p in icp_personas:
+        icp_variants.update(_normalize_title(p.get("title", "")))
+
     acct_personas = account.get("personas", [])
     if not acct_personas:
         return 0.0
-    acct_titles = set()
+
+    acct_variants: set[str] = set()
     for p in acct_personas:
         title = p if isinstance(p, str) else p.get("title", "")
-        acct_titles.add(title.lower())
+        acct_variants.update(_normalize_title(title))
 
-    if not acct_titles:
+    if not acct_variants:
         return 0.0
-    overlap = len(icp_titles & acct_titles)
-    return min(overlap / len(icp_titles), 1.0)
+
+    # Exact match after normalization
+    if icp_variants & acct_variants:
+        return 1.0
+
+    # Fuzzy: substring and keyword overlap
+    for acct_title in acct_variants:
+        for icp_title in icp_variants:
+            if icp_title in acct_title or acct_title in icp_title:
+                return 0.8
+            icp_words = {w for w in icp_title.split() if len(w) > 2}
+            acct_words = {w for w in acct_title.split() if len(w) > 2}
+            if icp_words and acct_words:
+                word_overlap = len(icp_words & acct_words) / len(icp_words)
+                if word_overlap >= 0.5:
+                    return 0.6
+
+    return 0.0
+
+
+def _score_timing_signals(account: dict, criteria: dict) -> float:
+    """Score presence of buying-trigger keywords in prospect data.
+
+    Scans the account's text fields (industry, location, persona titles, and
+    any extra discovery_data) for matches against the ICP's buying_triggers.
+    Returns 0.5 (neutral) when no buying triggers are defined.
+    """
+    triggers = criteria.get("buying_triggers", [])
+    if not triggers:
+        return 0.5  # No triggers defined — neutral, backwards compatible
+
+    trigger_terms = [t.lower() for t in triggers]
+
+    # Collect searchable text from the account
+    text_parts = [
+        account.get("industry", ""),
+        account.get("location", ""),
+    ]
+    for p in account.get("personas", []):
+        title = p if isinstance(p, str) else p.get("title", "")
+        text_parts.append(title)
+        if isinstance(p, dict):
+            text_parts.append(p.get("context", ""))
+
+    # Include discovery_data if present (prospect researcher stores extra info here)
+    discovery = account.get("discovery_data")
+    if isinstance(discovery, dict):
+        text_parts.extend(str(v) for v in discovery.values())
+    elif isinstance(discovery, str):
+        text_parts.append(discovery)
+
+    searchable = " ".join(text_parts).lower()
+    if not searchable.strip():
+        return 0.5  # No data to search — neutral
+
+    matched = sum(1 for term in trigger_terms if term in searchable)
+    return min(matched / len(trigger_terms), 1.0)
 
 
 def _score_data_confidence(account: dict) -> float:

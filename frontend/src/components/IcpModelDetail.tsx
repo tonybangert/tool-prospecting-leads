@@ -21,11 +21,27 @@ function WeightBar({ label, value }: { label: string; value: number }) {
   );
 }
 
+interface Persona {
+  title?: string;
+  seniority?: string;
+  context?: string;
+}
+
 export default function IcpModelDetail({ model }: Props) {
   const criteria = model.criteria as Record<string, unknown>;
   const weights = model.scoring_weights;
+
+  // Separate buying_triggers and personas for custom rendering
+  const buyingTriggers = Array.isArray(criteria.buying_triggers)
+    ? (criteria.buying_triggers as string[])
+    : [];
+  const personas = Array.isArray(criteria.personas)
+    ? (criteria.personas as Persona[])
+    : [];
+
   const criteriaEntries = Object.entries(criteria).filter(
-    ([, v]) => v != null && v !== "",
+    ([key, v]) =>
+      v != null && v !== "" && key !== "buying_triggers" && key !== "personas",
   );
 
   return (
@@ -49,6 +65,39 @@ export default function IcpModelDetail({ model }: Props) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {personas.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
+            Decision Makers
+          </h4>
+          <div className="space-y-1.5 text-sm">
+            {personas.map((p, i) => (
+              <div key={i} className="flex gap-2">
+                <span className="font-medium text-gray-900">
+                  {p.title}{p.seniority ? ` (${p.seniority})` : ""}
+                </span>
+                {p.context && (
+                  <span className="text-muted">— {p.context}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {buyingTriggers.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">
+            Buying Triggers
+          </h4>
+          <ul className="list-disc list-inside text-sm text-gray-900 space-y-0.5">
+            {buyingTriggers.map((trigger, i) => (
+              <li key={i}>{trigger}</li>
+            ))}
+          </ul>
         </div>
       )}
 

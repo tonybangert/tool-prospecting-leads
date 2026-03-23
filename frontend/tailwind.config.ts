@@ -5,26 +5,40 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: "#db2777", light: "#ec4899", bg: "#fdf2f8" },
-        secondary: { DEFAULT: "#7c3aed", bg: "#f5f3ff" },
-        accent: { DEFAULT: "#f59e0b", bg: "#fffbeb" },
+        navy: {
+          DEFAULT: "#102d50",
+          light: "#1a3f6b",
+          dark: "#0b1f38",
+          bg: "#f0f4f8",
+        },
+        amber: {
+          DEFAULT: "#faa840",
+          light: "#fbc06c",
+          dark: "#d48c2a",
+          bg: "#fff8ec",
+        },
+        coral: {
+          DEFAULT: "#ef4537",
+          light: "#f47268",
+          bg: "#fef0ef",
+        },
+        primary: { DEFAULT: "#102d50", light: "#1a3f6b", bg: "#f0f4f8" },
+        accent: { DEFAULT: "#faa840", bg: "#fff8ec" },
         success: { DEFAULT: "#10b981", bg: "#ecfdf5" },
         warning: { DEFAULT: "#f59e0b", bg: "#fffbeb" },
-        danger: { DEFAULT: "#ef4444", bg: "#fef2f2" },
-        cyan: { DEFAULT: "#06b6d4", bg: "#ecfeff" },
-        dark: { DEFAULT: "#0f0f1a", surface: "#1a1a2e", border: "#2d2d44" },
+        danger: { DEFAULT: "#ef4537", bg: "#fef0ef" },
+        dark: { DEFAULT: "#102d50", surface: "#1a3f6b", border: "#2a4a6b" },
         surface: "#ffffff",
-        bg: "#fafafa",
+        bg: "#f5f7fa",
         muted: "#6b7280",
         "text-light": "#9ca3af",
-        ticker: { green: "#22c55e", red: "#ef4444" },
         status: {
-          active: "#10b981",
-          churned: "#ef4444",
-          paused: "#f59e0b",
-          trial: "#7c3aed",
+          discovered: "#faa840",
+          selected: "#3b82f6",
+          enriched: "#10b981",
+          scored: "#7c3aed",
         },
-        risk: { low: "#10b981", medium: "#f59e0b", high: "#ef4444" },
+        risk: { low: "#10b981", medium: "#f59e0b", high: "#ef4537" },
       },
       fontFamily: {
         mono: [
@@ -53,9 +67,19 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-50%)" },
         },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "ticker-scroll": "ticker-scroll 30s linear infinite",
+        "fade-in": "fade-in 0.3s ease-out",
+        shimmer: "shimmer 1.5s ease-in-out infinite",
       },
     },
   },

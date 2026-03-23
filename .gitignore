@@ -9,6 +9,9 @@ venv/
 .env
 backend/.env
 
+# Google OAuth tokens
+*.google_tokens.json
+
 # Node
 node_modules/
 frontend/node_modules/

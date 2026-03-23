@@ -10,7 +10,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 from app.config import settings
 
-APOLLO_BASE_URL = "https://api.apollo.io"
+APOLLO_BASE_URL = "https://api.apollo.io/api"
 
 
 def _is_retryable(exc: BaseException) -> bool:
@@ -69,6 +69,41 @@ class ApolloService:
         resp = await self._client.get(f"/v1/people/{person_id}")
         resp.raise_for_status()
         return resp.json()
+
+    @_retry_decorator
+    async def match_by_linkedin(self, linkedin_url: str) -> dict | None:
+        """Match a person by their LinkedIn URL via Apollo people/match."""
+        resp = await self._client.post(
+            "/v1/people/match",
+            json={"linkedin_url": linkedin_url},
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        person = data.get("person")
+        if not person:
+            return None
+        # Normalize account → organization
+        account = person.pop("account", None) or {}
+        person["organization"] = account
+        return person
+
+    @_retry_decorator
+    async def search_by_name_and_company(
+        self, name: str, company: str
+    ) -> dict | None:
+        """Search for a specific person by name and company via contacts/search."""
+        resp = await self._client.post(
+            "/v1/contacts/search",
+            json={
+                "q_person_name": name,
+                "q_organization_name": company,
+                "per_page": 1,
+            },
+        )
+        resp.raise_for_status()
+        data = self._normalize_contacts_response(resp.json())
+        people = data.get("people", [])
+        return people[0] if people else None
 
     @staticmethod
     def _normalize_contacts_response(data: dict) -> dict:

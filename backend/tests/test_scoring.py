@@ -1,6 +1,11 @@
 """Tests for ICP fit scoring."""
 
-from app.services.scoring import _employee_count_to_size_label, calculate_icp_fit, score_apollo_person
+from app.services.scoring import (
+    _employee_count_to_size_label,
+    _score_timing_signals,
+    calculate_icp_fit,
+    score_apollo_person,
+)
 
 
 SAMPLE_ICP = {
@@ -13,6 +18,11 @@ SAMPLE_ICP = {
         "personas": [
             {"title": "VP of Sales", "seniority": "VP"},
             {"title": "Head of Revenue Operations", "seniority": "Director"},
+        ],
+        "buying_triggers": [
+            "recently hired operations lead",
+            "AI job postings",
+            "series B funding",
         ],
     },
     "scoring_weights": {
@@ -45,6 +55,9 @@ def test_perfect_match():
             {"title": "VP of Sales"},
             {"title": "Head of Revenue Operations"},
         ],
+        "discovery_data": {
+            "notes": "Recently hired operations lead, AI job postings visible, series B funding closed"
+        },
     }
     score = calculate_icp_fit(account, SAMPLE_ICP)
     assert score > 0.85, f"Perfect match should score high, got {score}"
@@ -118,3 +131,53 @@ def test_score_apollo_person_sparse():
     result = score_apollo_person(person, SAMPLE_ICP)
     assert 0.0 <= result["score"] <= 1.0
     assert result["score"] < 0.4  # sparse data = low score
+
+
+# --- Timing signals tests ---
+
+
+def test_timing_signals_no_triggers():
+    """No buying_triggers in criteria → neutral 0.5."""
+    account = {"industry": "SaaS", "personas": [{"title": "CEO"}]}
+    criteria_no_triggers = {"industries": ["SaaS"]}
+    assert _score_timing_signals(account, criteria_no_triggers) == 0.5
+
+
+def test_timing_signals_no_match():
+    """Buying triggers defined but none present in account data."""
+    account = {"industry": "SaaS", "personas": [{"title": "CEO"}]}
+    criteria = {"buying_triggers": ["series B funding", "AI job postings"]}
+    assert _score_timing_signals(account, criteria) == 0.0
+
+
+def test_timing_signals_partial_match():
+    """Some triggers found in account data."""
+    account = {
+        "industry": "SaaS",
+        "personas": [{"title": "CEO"}],
+        "discovery_data": {"notes": "Company just closed series B funding round"},
+    }
+    criteria = {"buying_triggers": ["series B funding", "AI job postings", "recently hired operations lead"]}
+    score = _score_timing_signals(account, criteria)
+    assert abs(score - 1 / 3) < 0.01  # 1 of 3 triggers matched
+
+
+def test_timing_signals_full_match():
+    """All triggers found in account data."""
+    account = {
+        "industry": "SaaS",
+        "personas": [{"title": "CEO"}],
+        "discovery_data": {
+            "notes": "Recently closed series B funding, posted AI job postings",
+            "hiring": "recently hired operations lead",
+        },
+    }
+    criteria = {"buying_triggers": ["series B funding", "AI job postings", "recently hired operations lead"]}
+    assert _score_timing_signals(account, criteria) == 1.0
+
+
+def test_timing_signals_empty_account():
+    """Triggers defined but account has no searchable text → neutral."""
+    account = {}
+    criteria = {"buying_triggers": ["series B funding"]}
+    assert _score_timing_signals(account, criteria) == 0.5

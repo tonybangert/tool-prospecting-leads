@@ -13,6 +13,7 @@ class ProspectResponse(BaseModel):
     first_name: str | None
     last_name: str | None
     email: str | None
+    phone: str | None
     title: str | None
     seniority: str | None
     linkedin_url: str | None
@@ -23,6 +24,9 @@ class ProspectResponse(BaseModel):
     company_location: str | None
     icp_fit_score: float | None
     score_breakdown: dict | None
+    source: str | None
+    discovery_data: dict | None
+    enriched_at: datetime | None
     status: str
     created_at: datetime
 
@@ -37,3 +41,16 @@ class ProspectListResponse(BaseModel):
 class SearchRequest(BaseModel):
     page: int = Field(default=1, ge=1)
     per_page: int = Field(default=25, ge=1, le=100)
+
+
+class DiscoverRequest(BaseModel):
+    page: int = Field(default=1, ge=1)
+    per_page: int = Field(default=10, ge=1, le=10)
+
+
+class SelectProspectsRequest(BaseModel):
+    prospect_ids: list[uuid.UUID]
+
+
+class EnrichRequest(BaseModel):
+    prospect_ids: list[uuid.UUID]
